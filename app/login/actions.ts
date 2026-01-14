@@ -38,16 +38,16 @@ export async function login(formData: FormData) {
   redirect('/')
 }
 
-export async function signup(formData: FormData) {
+export async function signUp(formData: FormData) {
   const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // 1. Validar Email
+  // Validar mail
   if (!validateEmail(email)) {
     return redirect(`/login?error=${encodeURIComponent('El formato del email no es válido.')}`)
   }
 
-  // 2. Validar Contraseña
+  // Validar contraseña
   if (!validatePassword(password)) {
     return redirect(
       `/login?error=${encodeURIComponent(
@@ -56,7 +56,7 @@ export async function signup(formData: FormData) {
     )
   }
 
-  // 3. Proceder con el registro
+  // Registro
   const supabase = await createClient()
   const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
@@ -75,4 +75,10 @@ export async function signup(formData: FormData) {
   return redirect(
     '/login?success=Registro exitoso. Por favor, confirma tu email para activar tu cuenta.'
   )
+}
+
+export async function signOut() {
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  return redirect('/login')
 }

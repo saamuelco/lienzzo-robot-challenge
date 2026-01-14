@@ -1,4 +1,4 @@
-import AuthForm from '@/components/auth-form'
+import AuthForm from '@/app/login/auth-form'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default async function LoginPage({

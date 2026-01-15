@@ -12,15 +12,14 @@ export async function saveSimulation(commands: string, obstacles: Coordinates[])
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuario no autenticado')
 
-  // 2. EJECUTAR LA LÓGICA (Tu función pura)
-  // El servidor es la Fuente de la Verdad para el resultado
+  // 2. Ejecutar lógica
   const result = calculatePath(commands, obstacles)
 
   // 3. Guardar en Base de Datos
   const { error } = await supabase.from('simulation').insert({
     user_id: user.id,
     commands: commands,
-    obstacles: obstacles, // Guardamos el mapa para la posteridad
+    obstacles: obstacles,
     final_x: result.finalX,
     final_y: result.finalY,
     execution_log: result.log // Guardamos el paso a paso

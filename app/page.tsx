@@ -12,7 +12,7 @@ export default async function Dashboard() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Si el middleware fallara (raro), esto es una segunda barrera de seguridad
+  // Si el proxy fallara , esto es una segunda barrera de seguridad
   if (!user) {
     return redirect('/login')
   }
@@ -35,7 +35,7 @@ export default async function Dashboard() {
               Hola, <span className="font-semibold text-gray-900">{userName}</span>
             </span>
             
-            {/* Formulario para Logout (Server Action sin JS en cliente necesario) */}
+            {/* Formulario para Logout (Server Action) */}
             <form action={signOut}>
               <button 
                 type="submit"

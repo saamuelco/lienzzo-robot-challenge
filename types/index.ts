@@ -20,14 +20,14 @@ export interface SimulationStep extends RobotState {
   action: 'START' | 'MOVE' | 'LEFT' | 'RIGHT' | 'INVALID_MOVE';
 }
 
-// La estructura completa de una simulación (lo que guardamos en Base de Datos)
+// La estructura completa de una simulación (lo que guardamos en la BD)
 export interface Simulation {
   id: string;
   created_at: string;
-  commands: string;       
-  is_success: boolean;    
+  commands: string;
   final_x: number;
   final_y: number;
   execution_log: SimulationStep[]; 
-  obstacles: Coordinates[];      
+  obstacles: Coordinates[];
+  //user??
 }

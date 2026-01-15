@@ -1,5 +1,5 @@
 import AuthForm from '@/app/login/auth-form'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, Bot, CheckCircle2 } from 'lucide-react'
 
 export default async function LoginPage({
   searchParams,
@@ -15,7 +15,7 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       
-      {/* Título / Logo */}
+      {/* Título */}
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900">
           Lienzzo<span className="text-indigo-600">.bot</span>

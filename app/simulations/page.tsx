@@ -11,7 +11,7 @@ export default function SimulationPage() {
           </a>
         </div>
         
-        <SimulatorView />
+        <SimulatorView/>
       </div>
     </div>
   )

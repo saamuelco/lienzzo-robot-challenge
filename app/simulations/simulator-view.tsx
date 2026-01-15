@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Coordinates, Direction } from '@/types'
 import { saveSimulation } from './actions'
-import { ArrowUp, RotateCcw, RotateCw, Play, Trash2, Undo2, Rocket } from 'lucide-react'
+import { ArrowUp, RotateCcw, RotateCw, Play, Trash2, Undo2, Rocket, Bot } from 'lucide-react'
 
 // Utilidad para clases condicionales
-//const cn = (...classes: string[]) => classes.filter(Boolean).join(' ')
-const cn = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ')
+const classNames = (...classes: (string | boolean | undefined | null)[]) => classes.filter(Boolean).join(' ')
 
 export default function SimulatorView() {
   // --- ESTADO ---
@@ -19,7 +18,7 @@ export default function SimulatorView() {
   const [robotPos, setRobotPos] = useState<Coordinates>({ x: 0, y: 0 })
   const [robotDir, setRobotDir] = useState<Direction>('N')
 
-  // --- INICIALIZACIÓN (Generar Mapa) ---
+  // --- INICIALIZACIÓN (Generar grid) ---
   useEffect(() => {
     // Generar entre 2 y 5 obstáculos aleatorios
     const count = Math.floor(Math.random() * 4) + 2 
@@ -41,9 +40,9 @@ export default function SimulatorView() {
   }, [])
 
   // --- HANDLERS ---
-  const addCommand = useCallback((cmd: 'A' | 'I' | 'D') => {
+  const addCommand = useCallback((command: 'A' | 'I' | 'D') => {
     if (isSimulating) return
-    setCommands(prev => prev + cmd)
+    setCommands(prev => prev + command)
   }, [isSimulating])
 
   // Soporte para Teclado
@@ -89,21 +88,25 @@ export default function SimulatorView() {
       <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Panel de comandos</h2>
-          <p className="text-sm text-gray-500">Usa los botones o tu teclado (A, I, D)</p>
+          <p className="text-sm text-gray-500">Usa los botones o las teclas A, I, D</p>
         </div>
 
-        {/* Visualizador de Comandos (Scroll horizontal) */}
+{/* Visualizador de comandos */}
         <div className="flex-1 overflow-hidden rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
           <div className="flex flex-wrap gap-2">
             {commands.split('').map((char, i) => (
-              <span key={i} className={cn(
-                "flex h-8 w-8 items-center justify-center rounded font-bold text-white shadow-sm transition-all animate-in zoom-in",
+              <span key={i} className={classNames(
+                "flex h-8 w-8 items-center justify-center rounded text-white shadow-sm transition-all animate-in zoom-in",
                 char === 'A' ? "bg-indigo-500" :
                 char === 'I' ? "bg-emerald-500" : "bg-amber-500"
               )}>
-                {char}
+                {/* Renderizado condicional del icono */}
+                {char === 'A' && <ArrowUp className="h-5 w-5" />}
+                {char === 'I' && <RotateCcw className="h-5 w-5" />}
+                {char === 'D' && <RotateCw className="h-5 w-5" />}
               </span>
             ))}
+            
             {commands.length === 0 && (
               <span className="text-sm italic text-gray-400">Esperando comandos...</span>
             )}
@@ -175,7 +178,7 @@ export default function SimulatorView() {
 
               return (
                 <div key={`${x}-${y}`} 
-                  className={cn(
+                  className={classNames(
                     "relative flex items-center justify-center rounded-lg border-2 text-xs font-mono transition-all duration-300",
                     isObstacle ? "border-gray-400 bg-gray-200" : "border-gray-100 bg-gray-50"
                   )}
@@ -190,14 +193,14 @@ export default function SimulatorView() {
 
                   {/* Icono Robot */}
                   {isRobot && (
-                    <div className={cn(
+                    <div className={classNames(
                       "absolute z-10 h-4/5 w-4/5 text-indigo-600 transition-transform duration-300",
                       robotDir === 'N' && "rotate-0",
                       robotDir === 'E' && "rotate-90",
                       robotDir === 'S' && "rotate-180",
                       robotDir === 'W' && "-rotate-90",
                     )}>
-                      <Rocket className="h-full w-full" />
+                      <Bot className="h-full w-full" />
                     </div>
                   )}
                 </div>

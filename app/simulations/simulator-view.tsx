@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation' // Importante para la redirección
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Coordinates, Direction } from '@/types'
 import { saveSimulation } from './actions'
 import { 
@@ -16,13 +16,15 @@ const classNames = (...classes: (string | boolean | undefined | null)[]) => {
 
 export default function SimulatorView() {
   const router = useRouter()
+  
+  // Referencia para el auto-scroll
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   // --- ESTADO DEL SIMULADOR ---
   const [commands, setCommands] = useState<string>('')
   const [obstacles, setObstacles] = useState<Coordinates[]>([])
   const [isSimulating, setIsSimulating] = useState(false)
   
-  // Estado visual del robot (para mostrar dónde acabó antes del modal)
   const [robotPos, setRobotPos] = useState<Coordinates>({ x: 0, y: 0 })
   const [robotDir, setRobotDir] = useState<Direction>('N')
 
@@ -30,10 +32,16 @@ export default function SimulatorView() {
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [createdSimId, setCreatedSimId] = useState<string | null>(null)
 
-  // --- INICIALIZACIÓN (Generar grid) ---
+  // --- INICIALIZACIÓN ---
   useEffect(() => {
     generateMap()
   }, [])
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [commands])
 
   const generateMap = () => {
     const count = Math.floor(Math.random() * 4) + 2 
@@ -42,10 +50,8 @@ export default function SimulatorView() {
     while (newObstacles.length < count) {
       const x = Math.floor(Math.random() * 5)
       const y = Math.floor(Math.random() * 5)
-      // Evitar bloquear salida (0,0 y adyacentes)
       if ((x === 0 && y === 0) || (x === 0 && y === 1) || (x === 1 && y === 0)) continue
       
-      // Evitar duplicados
       if (!newObstacles.some(o => o.x === x && o.y === y)) {
         newObstacles.push({ x, y })
       }
@@ -59,7 +65,6 @@ export default function SimulatorView() {
     setCommands(prev => prev + cmd)
   }, [isSimulating, showSuccessModal])
 
-  // Soporte para Teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isSimulating || showSuccessModal) return
@@ -77,14 +82,10 @@ export default function SimulatorView() {
     setIsSimulating(true)
 
     try {
-      // 1. Llamar al Server Action (asegúrate de haber actualizado actions.ts en el paso 1)
       const result = await saveSimulation(commands, obstacles)
-      
-      // 2. Actualizar posición final visual
       setRobotPos({ x: result.finalX, y: result.finalY })
       setRobotDir(result.finalDir)
       
-      // 3. MOSTRAR MODAL
       if (result.dbId) {
         setCreatedSimId(result.dbId)
         setShowSuccessModal(true)
@@ -97,14 +98,13 @@ export default function SimulatorView() {
     }
   }
 
-  // Acciones del Modal
   const handleCreateNew = () => {
     setShowSuccessModal(false)
     setCommands('')
     setRobotPos({ x: 0, y: 0 })
     setRobotDir('N')
     setCreatedSimId(null)
-    generateMap() // Mapa nuevo para nueva partida
+    generateMap()
   }
 
   const handleViewResult = () => {
@@ -119,14 +119,17 @@ export default function SimulatorView() {
       <div className="grid h-[calc(100vh-140px)] gap-8 lg:grid-cols-2 lg:gap-12">
         
         {/* SECCIÓN IZQUIERDA: CONTROLES */}
-        <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+        <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 overflow-hidden">
           <div>
             <h2 className="text-xl font-bold text-gray-900">Panel de Comandos</h2>
             <p className="text-sm text-gray-500">Usa los botones o tu teclado (A, I, D)</p>
           </div>
 
-          {/* Visualizador de Comandos */}
-          <div className="flex-1 overflow-hidden rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200">
+          {/* Visualizador de Comandos con SCROLL */}
+          <div 
+            ref={scrollRef} // Ref para auto-scroll
+            className="flex-1 overflow-y-auto min-h-[150px] rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 scroll-smooth"
+          >
             <div className="flex flex-wrap gap-2">
               {commands.split('').map((char, i) => (
                 <span key={i} className={classNames(
@@ -146,7 +149,7 @@ export default function SimulatorView() {
           </div>
 
           {/* Botonera */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-3 shrink-0">
             <button onClick={() => addCommand('I')} disabled={isSimulating}
               className="flex flex-col items-center justify-center gap-1 rounded-xl bg-emerald-50 p-4 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50 transition-colors">
               <RotateCcw className="h-6 w-6" />
@@ -167,7 +170,7 @@ export default function SimulatorView() {
           </div>
 
           {/* Controles Secundarios */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 shrink-0">
             <button onClick={() => setCommands(c => c.slice(0, -1))} disabled={!commands || isSimulating}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-gray-200 p-3 text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition-colors">
               <Undo2 className="h-4 w-4" /> Deshacer
@@ -180,7 +183,7 @@ export default function SimulatorView() {
 
           {/* BOTÓN PRINCIPAL */}
           <button onClick={handleExecute} disabled={!commands || isSimulating}
-            className="mt-auto flex w-full items-center justify-center gap-3 rounded-xl bg-gray-900 p-4 text-lg font-bold text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all active:scale-[0.98]">
+            className="mt-auto flex w-full items-center justify-center gap-3 rounded-xl bg-gray-900 p-4 text-lg font-bold text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg transition-all active:scale-[0.98] shrink-0">
             {isSimulating ? (
               <>Procesando...</>
             ) : (
@@ -193,12 +196,10 @@ export default function SimulatorView() {
 
         {/* SECCIÓN DERECHA: GRID 5x5 */}
         <div className="flex items-center justify-center rounded-2xl bg-gray-100 p-4 shadow-inner ring-1 ring-gray-200 overflow-hidden">
-          
           <div className="relative h-full w-auto aspect-square max-h-[500px] grid grid-cols-5 gap-2 p-4 bg-white rounded-xl shadow-2xl">
             {Array.from({ length: 5 }).map((_, rowInverse) => {
               const y = 4 - rowInverse
               return Array.from({ length: 5 }).map((_, x) => {
-                
                 const isObstacle = obstacles.some(o => o.x === x && o.y === y)
                 const isRobot = robotPos.x === x && robotPos.y === y
 
@@ -212,9 +213,7 @@ export default function SimulatorView() {
                     <span className="absolute bottom-1 right-1 text-[10px] text-gray-300 select-none">
                       {x},{y}
                     </span>
-
                     {isObstacle && <div className="h-3/4 w-3/4 bg-gray-800 rounded-md opacity-80" />}
-
                     {isRobot && (
                       <div className={classNames(
                         "absolute z-10 h-4/5 w-4/5 text-indigo-600 transition-transform duration-300",
@@ -238,7 +237,6 @@ export default function SimulatorView() {
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-300 ring-1 ring-gray-200">
-            
             <div className="bg-emerald-50 p-8 flex flex-col items-center text-center border-b border-emerald-100">
               <div className="h-20 w-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600 shadow-sm ring-4 ring-white">
                 <CheckCircle2 className="h-10 w-10" />
@@ -248,25 +246,14 @@ export default function SimulatorView() {
                 El robot ha ejecutado todos los comandos y los resultados se han guardado correctamente.
               </p>
             </div>
-
             <div className="p-6 grid gap-3 bg-gray-50/50">
-              <button
-                onClick={handleViewResult}
-                className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-[0.98]"
-              >
-                <Eye className="h-5 w-5" />
-                Visualizar resultado
+              <button onClick={handleViewResult} className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-[0.98]">
+                <Eye className="h-5 w-5" /> Visualizar resultado
               </button>
-
-              <button
-                onClick={handleCreateNew}
-                className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:border-gray-300 hover:bg-gray-50 transition-all active:scale-[0.98]"
-              >
-                <RefreshCw className="h-5 w-5" />
-                Crear nueva simulación
+              <button onClick={handleCreateNew} className="flex items-center justify-center gap-3 w-full p-4 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:border-gray-300 hover:bg-gray-50 transition-all active:scale-[0.98]">
+                <RefreshCw className="h-5 w-5" /> Crear nueva simulación
               </button>
             </div>
-            
           </div>
         </div>
       )}

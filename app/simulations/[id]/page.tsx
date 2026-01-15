@@ -3,17 +3,12 @@ import { redirect } from 'next/navigation'
 import HistoryView from '@/app/history/history-view'
 import { Simulation } from '@/types'
 
-// 1. CAMBIO EN LA INTERFAZ: params es ahora una Promesa
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
 export default async function SingleSimulationPage({ params }: PageProps) {
-  // 2. CAMBIO EN LA LÓGICA: Desempaquetamos la promesa con await
   const { id } = await params
-
-  // --- DEBUG (Ya debería salir el UUID correcto) ---
-  console.log("ID recuperado:", id)
   
   const supabase = await createClient()
 
@@ -46,7 +41,7 @@ export default async function SingleSimulationPage({ params }: PageProps) {
       <div className="mx-auto max-w-7xl">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Resultado de la Simulación</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Resultado de la simulación</h1>
             <p className="mt-1 text-sm text-gray-500">Visualizando ejecución individual.</p>
           </div>
           {/* Enlace para volver a crear una nueva */}

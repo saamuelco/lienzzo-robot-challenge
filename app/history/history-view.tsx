@@ -45,7 +45,7 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
       {/* 1. LISTA LATERAL (SIDEBAR) */}
       <div className="flex flex-col gap-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
         <div className="bg-gray-50 p-4 border-b border-gray-100 shrink-0">
-          <h2 className="font-semibold text-gray-900">Últimas simulaciones</h2>
+          <h2 className="font-semibold text-gray-900">Lista de simulaciones</h2>
         </div>
         
         <div className="flex-1 overflow-y-auto p-2 space-y-2">

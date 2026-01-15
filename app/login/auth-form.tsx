@@ -63,7 +63,7 @@ export default function AuthForm() {
               mode === 'login' ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Iniciar Sesión
+            Iniciar sesión
           </button>
           <button
             onClick={() => setMode('signup')}

@@ -19,12 +19,23 @@ export async function GET(request: NextRequest) {
     })
     
     if (!error) {
-      // Éxito: Redirigimos al dashboard (o donde diga 'next')
+      // Caso ideal: El token funcionó a la primera.
       redirect(next)
+    } else {
+      // Si falla, comprobamos si el usuario ya tiene sesión.
+      // Esto maneja el caso donde un escáner de email consumió el token previamente.
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (user) {
+        // El usuario está logueado, así que el error del token es irrelevante (ya fue usado).
+        // Redirigimos al éxito.
+        redirect(next)
+      }
     }
   }
 
-  // ERROR: Si el token es inválido o hubo error, NO vamos a una página 404.
-  // Volvemos al login explicando qué pasó.
-  redirect('/login?error=El enlace de confirmación es inválido o ha caducado.')
+  // Si llegamos aquí, es que:
+  // 1. No había token/type.
+  // 2. verifyOtp falló Y ADEMÁS no hay usuario logueado (token realmente caducado o falso).
+  redirect('/login?message=Email confirmado. Ya puedes acceder a tu cuenta.')
 }

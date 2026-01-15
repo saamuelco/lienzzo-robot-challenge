@@ -2,37 +2,41 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { calculatePath } from './robotLogic'
+// Asegúrate de que la ruta a tu lógica sea correcta
+import { calculatePath } from '@/app/simulations/robotLogic' 
 import { Coordinates } from '@/types'
 
 export async function saveSimulation(commands: string, obstacles: Coordinates[]) {
   const supabase = await createClient()
 
-  // 1. Obtener usuario (Seguridad)
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Usuario no autenticado')
 
-  // 2. Ejecutar lógica
   const result = calculatePath(commands, obstacles)
 
-  // 3. Guardar en Base de Datos
-  const { error } = await supabase.from('simulation').insert({
+  // CAMBIO AQUÍ: Añadimos .select().single() para obtener el dato insertado
+  const { data, error } = await supabase.from('simulation').insert({
     user_id: user.id,
     commands: commands,
     obstacles: obstacles,
     final_x: result.finalX,
     final_y: result.finalY,
-    execution_log: result.log // Guardamos el paso a paso
+    // is_success: result.isSuccess, // (Si lo quitaste de BD, quita esta línea)
+    execution_log: result.log
   })
+  .select('id') // <--- IMPORTANTE: Pedimos que nos devuelva el ID
+  .single()
 
   if (error) {
     console.error('Error guardando simulación:', error)
     throw new Error('Error al guardar la simulación')
   }
 
-  // 4. Revalidar para actualizar historiales
   revalidatePath('/history')
 
-  // 5. Devolver el resultado al frontend para la animación
-  return result
+  // Devolvemos el resultado del cálculo Y el ID de la base de datos
+  return { 
+    ...result, 
+    dbId: data.id // Necesario para visualizar la simulación directamente
+  }
 }

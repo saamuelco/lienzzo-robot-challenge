@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 // Asegúrate de que la ruta a tu lógica sea correcta
 import { calculatePath } from '@/app/simulations/robotLogic' 
 import { Coordinates } from '@/types'
+import { Simulation } from '@/types'
 
 export async function saveSimulation(commands: string, obstacles: Coordinates[]) {
   const supabase = await createClient()
@@ -14,17 +15,15 @@ export async function saveSimulation(commands: string, obstacles: Coordinates[])
 
   const result = calculatePath(commands, obstacles)
 
-  // CAMBIO AQUÍ: Añadimos .select().single() para obtener el dato insertado
   const { data, error } = await supabase.from('simulation').insert({
     user_id: user.id,
     commands: commands,
     obstacles: obstacles,
     final_x: result.finalX,
     final_y: result.finalY,
-    // is_success: result.isSuccess, // (Si lo quitaste de BD, quita esta línea)
     execution_log: result.log
   })
-  .select('id') // <--- IMPORTANTE: Pedimos que nos devuelva el ID
+  .select('id')
   .single()
 
   if (error) {
@@ -39,4 +38,25 @@ export async function saveSimulation(commands: string, obstacles: Coordinates[])
     ...result, 
     dbId: data.id // Necesario para visualizar la simulación directamente
   }
+}
+
+export async function getSimulationById(id: string): Promise<Simulation | null> {
+  const supabase = await createClient()
+
+  // Verificamos sesión para asegurar contexto
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  const { data, error } = await supabase
+    .from('simulation')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) {
+    console.error("Error crítico fetching simulation:", error)
+    return null
+  }
+
+  return data as unknown as Simulation | null
 }

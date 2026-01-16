@@ -29,5 +29,4 @@ export interface Simulation {
   final_y: number;
   execution_log: SimulationStep[]; 
   obstacles: Coordinates[];
-  //user??
 }

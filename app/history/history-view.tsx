@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Simulation } from '@/types'
+import { deleteSimulation, getRecentSimulations } from './actions'
+import { useRouter } from 'next/navigation'
 import { 
   Bot, Calendar, Footprints, Goal,
   ChevronFirst, ChevronLast, ChevronLeft, ChevronRight,
-  ArrowUp, RotateCcw, RotateCw, AlertCircle, PlayCircle
+  ArrowUp, RotateCcw, RotateCw, AlertCircle, 
+  Play, Pause, Trash2 
 } from 'lucide-react'
 
 // Utilidad de clases
@@ -13,13 +16,27 @@ const classNames = (...classes: (string | boolean | undefined | null)[]) => {
   return classes.filter(Boolean).join(' ')
 }
 
-export default function HistoryView({ initialSimulations }: { initialSimulations: Simulation[] }) {
-  // --- ESTADO ---
-  const [selectedId, setSelectedId] = useState<string | null>(initialSimulations[0]?.id || null)
-  const [stepIndex, setStepIndex] = useState(0)
+interface HistoryViewProps {
+  initialSimulations: Simulation[]
+  isSingleView?: boolean
+}
 
-  // --- DATOS COMPUTADOS ---
-  const selectedSim = initialSimulations.find(s => s.id === selectedId)
+export default function HistoryView({ initialSimulations, isSingleView = false }: HistoryViewProps) {
+  
+  const router = useRouter()
+
+  // --- ESTADO ---
+  const [simulations, setSimulations] = useState<Simulation[]>(initialSimulations)
+  const [selectedId, setSelectedId] = useState<string | null>(initialSimulations[0]?.id || null)
+  
+  // Estado de reproducción
+  const [stepIndex, setStepIndex] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(false)
+
+  // --- Simulación seleccionada ---
+  const selectedSim = simulations.find(s => s.id === selectedId)
+  
+  // Si borramos la simulación seleccionada, selectedSim será undefined, así que protegemos el render
   const currentStep = selectedSim?.execution_log[stepIndex] || { x: 0, y: 0, dir: 'N', action: 'START', stepIndex: 0 }
   const totalSteps = selectedSim ? selectedSim.execution_log.length - 1 : 0
 
@@ -30,10 +47,75 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
     })
   }
 
+  // --- EFECTO DE AUTO-PLAY ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout
+
+    if (isPlaying && selectedSim) {
+      interval = setInterval(() => {
+        setStepIndex((prev) => {
+          // Si llegamos al final, paramos
+          if (prev >= totalSteps) {
+            setIsPlaying(false)
+            return prev
+          }
+          return prev + 1
+        })
+      }, 800)
+    }
+
+    return () => clearInterval(interval)
+  }, [isPlaying, totalSteps, selectedSim])
+
   // --- HANDLERS ---
   const handleSelect = (id: string) => {
     setSelectedId(id)
     setStepIndex(0)
+    setIsPlaying(false) // Parar animación si cambiamos de simulación
+  }
+
+  const handleTogglePlay = () => {
+    if (isPlaying) {
+      setIsPlaying(false)
+    } else {
+      // Si estamos al final y damos play, rebobinamos al inicio
+      if (stepIndex === totalSteps) {
+        setStepIndex(0)
+      }
+      setIsPlaying(true)
+    }
+  }
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    // Evitamos que el click seleccione la simulación al mismo tiempo
+    e.stopPropagation() 
+
+    const confirmed = window.confirm('¿Estás seguro de que quieres borrar esta simulación? Esta acción no se puede deshacer.')
+    if (!confirmed) return
+
+    try {
+      // Borrar en servidor
+      await deleteSimulation(id)
+
+      if (isSingleView) {
+        alert('Simulación borrada correctamente.') 
+        router.push('/simulations')        
+        return
+      }
+
+      const refreshedList = await getRecentSimulations()
+      setSimulations(refreshedList)
+
+      if (refreshedList.length > 0) {
+          setSelectedId(refreshedList[0].id)
+          setStepIndex(0)
+          setIsPlaying(false)
+      }else {
+          setSelectedId(null)
+      }
+    } catch (error) {
+      alert('Ha sucedido un errror al borrar la simulación.')  
+    }
   }
 
   const controlButtonClass = "p-3 rounded-full bg-indigo-600 text-white shadow-md transition-all hover:bg-indigo-700 active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
@@ -49,24 +131,33 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
         </div>
         
         <div className="flex-1 overflow-y-auto p-2 space-y-2">
-          {initialSimulations.length === 0 && (
+          {simulations.length === 0 && (
             <p className="p-4 text-center text-sm text-gray-500">No hay simulaciones aún.</p>
           )}
 
-          {initialSimulations.map((sim) => (
-            <button
+          {simulations.map((sim) => (
+            <div
               key={sim.id}
               onClick={() => handleSelect(sim.id)}
               className={classNames(
-                "w-full text-left p-3 rounded-xl transition-all border",
+                "group relative w-full text-left p-3 rounded-xl transition-all border cursor-pointer",
                 selectedId === sim.id
                   ? "bg-indigo-50 border-indigo-200 shadow-sm"
                   : "bg-white border-transparent hover:bg-gray-50"
               )}
             >
-              <div className="flex items-center justify-between mb-1">
+              {/* BOTÓN DE BORRAR (Solo visible en hover o si está seleccionado) */}
+              <button
+                onClick={(e) => handleDelete(e, sim.id)}
+                className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all z-10"
+                title="Borrar simulación"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center justify-between mb-1 pr-6">
                 <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
-                  <Calendar className="h-3 w-3" /> {"Simulación del " + formatDate(sim.created_at)}
+                  <Calendar className="h-3 w-3" /> Simulación del {formatDate(sim.created_at)}
                 </span>
               </div>
               
@@ -90,7 +181,7 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
                   <Footprints className="h-3 w-3" /> {sim.commands.length} comandos
                 </span>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
@@ -126,19 +217,9 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
                       {isObstacle && <div className="h-3/4 w-3/4 bg-gray-800 rounded-md opacity-80" />}
 
                       <div className={classNames(
-                        // 1. Quitamos 'text-indigo-600' fijo de aquí
                         "absolute z-10 h-4/5 w-4/5 transition-all duration-300 ease-in-out",
-                        
                         isRobot ? "opacity-100 scale-100" : "opacity-0 scale-50",
-                        
-                        // 2. Lógica de COLOR y EFECTO según la acción
-                        // Si hay colisión: ROJO + PARPADEO (Pulse)
-                        // Si no: INDIGO normal
-                        isRobot && currentStep.action === 'INVALID_MOVE' 
-                          ? "text-red-500 animate-pulse" 
-                          : "text-indigo-600",
-
-                        // 3. Rotación
+                        isRobot && currentStep.action === 'INVALID_MOVE' ? "text-red-500 animate-pulse" : "text-indigo-600",
                         isRobot && currentStep.dir === 'N' && "rotate-0",
                         isRobot && currentStep.dir === 'E' && "rotate-90",
                         isRobot && currentStep.dir === 'S' && "rotate-180",
@@ -155,29 +236,25 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
         </div>
 
         {/* 3. CONTROLES DE REPRODUCCIÓN */}
-
         <div className="shrink-0 flex flex-col items-center gap-3 rounded-2xl bg-transparent p-4">
           
           {selectedSim && (
             <>
-              {/* Display de Comando Actual */}
+              {/* Display de Comando actual */}
               <div className="flex items-center gap-3 text-base font-medium text-gray-700 min-h-[28px]">
                 <span className="text-sm text-gray-400 font-normal mr-2">
                   {stepIndex}/{totalSteps}
                 </span>
                 
                 {currentStep.action === 'START' && (
-                  <span className="flex items-center gap-1.5 text-gray-400 animate-in fade-in slide-in-from-bottom-1 text-sm">   
-                    <PlayCircle className="h-4 w-4" /> Inicio
-                  </span>
+                   <span className="text-gray-400 text-sm">Inicio</span>
                 )}
-                
                 {currentStep.action === 'MOVE' && (
                   <span className="flex items-center gap-1.5 text-indigo-600 animate-in fade-in slide-in-from-bottom-1 text-sm">
                     <ArrowUp className="h-4 w-4" /> Avanzar
                   </span>
                 )}
-                {currentStep.action === 'LEFT' && (
+                 {currentStep.action === 'LEFT' && (
                   <span className="flex items-center gap-1.5 text-emerald-600 animate-in fade-in slide-in-from-bottom-1 text-sm">
                     <RotateCcw className="h-4 w-4" /> Girar Izq.
                   </span>
@@ -194,23 +271,32 @@ export default function HistoryView({ initialSimulations }: { initialSimulations
                 )}
               </div>
 
-              {/* Botonera Unificada */}
+              {/* Botonera */}
               <div className="flex items-center gap-2">
-                <button onClick={() => setStepIndex(0)} disabled={stepIndex === 0} className={controlButtonClass} title="Inicio">
+                <button onClick={() => setStepIndex(0)} disabled={stepIndex === 0 || isPlaying} className={controlButtonClass} title="Inicio">
                   <ChevronFirst className="h-5 w-5" />
                 </button>
                 
-                <button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0} className={controlButtonClass} title="Anterior">
+                <button onClick={() => setStepIndex(Math.max(0, stepIndex - 1))} disabled={stepIndex === 0 || isPlaying} className={controlButtonClass} title="Anterior">
                   <ChevronLeft className="h-5 w-5" />
                 </button>
 
-                <div className="w-2" /> 
+                {/* BOTÓN PLAY/PAUSE */}
+                <div className="mx-2">
+                  <button 
+                    onClick={handleTogglePlay}
+                    className="p-4 rounded-full bg-indigo-600 text-white shadow-lg transition-all hover:bg-indigo-500 hover:scale-105 active:scale-95"
+                    title={isPlaying ? "Pausar" : "Reproducir simulación"}
+                  >
+                    {isPlaying ? <Pause className="h-6 w-6 fill-current" /> : <Play className="h-6 w-6 fill-current ml-1" />}
+                  </button>
+                </div>
 
-                <button onClick={() => setStepIndex(Math.min(totalSteps, stepIndex + 1))} disabled={stepIndex === totalSteps} className={controlButtonClass} title="Siguiente">
+                <button onClick={() => setStepIndex(Math.min(totalSteps, stepIndex + 1))} disabled={stepIndex === totalSteps || isPlaying} className={controlButtonClass} title="Siguiente">
                   <ChevronRight className="h-5 w-5" />
                 </button>
                 
-                <button onClick={() => setStepIndex(totalSteps)} disabled={stepIndex === totalSteps} className={controlButtonClass} title="Final">
+                <button onClick={() => setStepIndex(totalSteps)} disabled={stepIndex === totalSteps || isPlaying} className={controlButtonClass} title="Final">
                   <ChevronLast className="h-5 w-5" />
                 </button>
               </div>

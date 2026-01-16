@@ -93,7 +93,7 @@ export default function SimulatorView() {
       } 
       
       if (prev.length >= 5) {
-        showToast("El máximo de obstáculos es 5")
+        showToast("El máximo de obstáculos permitido es 5.")
         return prev
       }
       

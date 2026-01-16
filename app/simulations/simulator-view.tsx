@@ -164,13 +164,13 @@ export default function SimulatorView() {
   // --- RENDER ---
   return (
     <>
-      <div className="flex flex-col h-[calc(100vh-140px)] gap-6">
+      <div className="flex flex-col h-auto lg:h-[calc(100vh-140px)] gap-6">
         
         {/* PARTE SUPERIOR */}
-        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 flex-1 min-h-0">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12 flex-1 lg:min-h-0">
           
           {/* SECCIÓN IZQUIERDA: CONTROLES */}
-          <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 overflow-hidden">
+          <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 overflow-hidden h-fit lg:h-auto">
             <div>
               <h2 className="text-xl font-bold text-gray-900">Panel de comandos</h2>
               <p className="text-sm text-gray-500">Programa la secuencia de movimientos.</p>
@@ -178,7 +178,7 @@ export default function SimulatorView() {
 
             <div 
               ref={scrollRef}
-              className="flex-1 overflow-y-auto min-h-[100px] rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 scroll-smooth"
+              className="flex-1 overflow-y-auto min-h-[100px] max-h-[200px] lg:max-h-none rounded-xl bg-gray-50 p-4 ring-1 ring-gray-200 scroll-smooth"
             >
               <div className="flex flex-wrap gap-2">
                 {commands.split('').map((char, i) => (
@@ -247,8 +247,8 @@ export default function SimulatorView() {
                 </button>
              </div>
 
-            <div className="flex-1 flex items-center justify-center">
-              <div className="relative h-full w-auto aspect-square max-h-[500px] grid grid-cols-5 gap-2 p-4 bg-white rounded-xl shadow-2xl">
+            <div className="flex-1 flex items-center justify-center min-h-[350px] lg:min-h-0">
+              <div className="relative w-full h-auto lg:h-full lg:w-auto aspect-square max-h-[500px] grid grid-cols-5 gap-2 p-4 bg-white rounded-xl shadow-2xl">
                 {Array.from({ length: 5 }).map((_, rowInverse) => {
                   const y = 4 - rowInverse
                   return Array.from({ length: 5 }).map((_, x) => {

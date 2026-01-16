@@ -123,15 +123,15 @@ export default function HistoryView({ initialSimulations, isSingleView = false }
 
   // --- RENDER ---
   return (
-    <div className="grid h-[calc(100vh-140px)] gap-6 lg:grid-cols-[320px_1fr]">
+    <div className="flex flex-col lg:grid lg:h-[calc(100vh-140px)] h-auto gap-6 lg:grid-cols-[320px_1fr]">
       
       {/* 1. LISTA LATERAL (SIDEBAR) */}
-      <div className="flex flex-col gap-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+      <div className="flex flex-col gap-4 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 shrink-0">
         <div className="bg-gray-50 p-4 border-b border-gray-100 shrink-0">
           <h2 className="font-semibold text-gray-900">Lista de simulaciones</h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        <div className="h-64 lg:h-auto lg:flex-1 overflow-y-auto p-2 space-y-2">
           {simulations.length === 0 && (
             <p className="p-4 text-center text-sm text-gray-500">No hay simulaciones aún.</p>
           )}
@@ -188,14 +188,14 @@ export default function HistoryView({ initialSimulations, isSingleView = false }
       </div>
 
       {/* 2. AREA DE REPLAY (DERECHA) */}
-      <div className="flex flex-col gap-4 bg-gray-100 rounded-2xl overflow-hidden">
+      <div className="flex flex-col gap-4 bg-gray-100 rounded-2xl overflow-hidden min-h-[450px] lg:min-h-0">
         
         {/* GRID VISUALIZER */}
         <div className="flex-1 min-h-0 flex items-center justify-center rounded-2xl bg-transparent p-4 ring-gray-200">
           {!selectedSim ? (
             <div className="text-gray-400">Selecciona una simulación</div>
           ) : (
-            <div className="relative h-full w-auto aspect-square max-h-[500px] grid grid-cols-5 gap-2 p-4 bg-white rounded-xl shadow-2xl">
+            <div className="relative w-full h-auto lg:h-full lg:w-auto aspect-square max-h-[500px] grid grid-cols-5 gap-2 p-4 bg-white rounded-xl shadow-2xl">
               
               {Array.from({ length: 5 }).map((_, rowInverse) => {
                 const y = 4 - rowInverse
@@ -273,7 +273,7 @@ export default function HistoryView({ initialSimulations, isSingleView = false }
               </div>
 
               {/* Botonera */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 overflow-x-auto max-w-full pb-2">
                 <button onClick={() => setStepIndex(0)} disabled={stepIndex === 0 || isPlaying} className={controlButtonClass} title="Inicio">
                   <ChevronFirst className="h-5 w-5" />
                 </button>

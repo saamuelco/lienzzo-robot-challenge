@@ -150,7 +150,7 @@ export default function HistoryView({ initialSimulations, isSingleView = false }
               {/* BOTÓN DE BORRAR (Solo visible en hover o si está seleccionado) */}
               <button
                 onClick={(e) => handleDelete(e, sim.id)}
-                className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all z-10"
+                className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 opacity-100 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all z-10"
                 title="Borrar simulación"
               >
                 <Trash2 className="h-4 w-4" />

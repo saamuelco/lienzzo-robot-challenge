@@ -120,4 +120,4 @@ La aplicación estará disponible en `http://localhost:3000`.
 Este proyecto es público y ha sido desarrollado como parte de un proceso de selección técnica.
 
 ---
-*Desarrollado con muchas ganas de seguir aprendiendo (y con la ayuda de Gemini) por Samuel Cantó Ortuño.*
+*Desarrollado por Samuel Cantó Ortuño.*

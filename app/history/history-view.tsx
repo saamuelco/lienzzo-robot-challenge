@@ -96,9 +96,10 @@ export default function HistoryView({ initialSimulations, isSingleView = false }
     try {
       // Borrar en servidor
       await deleteSimulation(id)
+      
+      alert('Simulación borrada correctamente.')
 
-      if (isSingleView) {
-        alert('Simulación borrada correctamente.') 
+      if (isSingleView) { 
         router.push('/simulations')        
         return
       }
